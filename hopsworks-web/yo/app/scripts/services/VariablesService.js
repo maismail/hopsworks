@@ -63,6 +63,9 @@ angular.module('hopsWorksApp')
               },
               getCondaDefaultRepo: function () {
                 return $http.get('/api/variables/conda');
+              },
+              isCloud: function(){
+                return $http.get('/api/variables/isCloud');
               }
             };
             return service;

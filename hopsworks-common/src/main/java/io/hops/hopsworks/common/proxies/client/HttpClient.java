@@ -21,6 +21,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
@@ -115,5 +116,9 @@ public class HttpClient {
   
   public <T> T execute(HttpHost host, HttpRequest request, ResponseHandler<T> handler) throws IOException {
     return client.execute(host, request, handler);
+  }
+  
+  public <T> T execute(HttpUriRequest request, ResponseHandler<T> handler) throws IOException {
+    return client.execute(request, handler);
   }
 }

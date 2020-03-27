@@ -330,7 +330,11 @@ public class AuthService {
     MessagingException {
     RESTApiJsonResponse json = new RESTApiJsonResponse();
     String reqUrl = FormatUtils.getUserURL(req);
-    userController.sendPasswordRecoveryEmail(email, securityQuestion, securityAnswer, reqUrl);
+    if(settings.isCloud()){
+      userController.sendPasswordRecoveryEmailForCloud(email, reqUrl);
+    }else{
+      userController.sendPasswordRecoveryEmail(email, securityQuestion, securityAnswer, reqUrl);
+    }
     json.setSuccessMessage(ResponseMessages.PASSWORD_RESET);
     return Response.ok(json).build();
   }

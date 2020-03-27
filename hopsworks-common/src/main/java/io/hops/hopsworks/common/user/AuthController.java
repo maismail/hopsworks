@@ -39,6 +39,7 @@
 package io.hops.hopsworks.common.user;
 
 import io.hops.hopsworks.common.dao.certificates.CertsFacade;
+import io.hops.hopsworks.common.util.CloudClient;
 import io.hops.hopsworks.persistence.entity.certificates.UserCerts;
 import io.hops.hopsworks.persistence.entity.project.Project;
 import io.hops.hopsworks.common.dao.project.ProjectFacade;
@@ -103,7 +104,9 @@ public class AuthController {
   private SecurityUtils securityUtils;
   @EJB
   private AccountAuditFacade accountAuditFacade;
-
+  @EJB
+  private CloudClient cloudClient;
+  
   private void validateUser(Users user) {
     if (user == null) {
       throw new IllegalArgumentException("User not set.");
@@ -633,5 +636,43 @@ public class AuthController {
       return false;
     }
     return user.getBbcGroupCollection().contains(group);
+  }
+  
+  public void sendNewRecoveryValidationKeyForCloud(Users user, String url,
+      boolean isPassword) throws UserException {
+    if (user == null) {
+      throw new IllegalArgumentException("User not set.");
+    }
+    if (UserAccountType.REMOTE_ACCOUNT_TYPE.equals(user.getMode())) {
+      throw new UserException(RESTCodes.UserErrorCode.USER_WAS_NOT_FOUND, Level.FINE);
+    }
+    checkUserStatus(user, false);
+    
+    String resetToken;
+    long validForHour = TimeUnit.HOURS.toMillis(SecurityUtils.RESET_LINK_VALID_FOR_HOUR);
+    //resend the same token exp date > 5min
+    if (user.getValidationKey() != null && user.getValidationKeyType() != null && user.getValidationKeyUpdated() != null
+        && user.getValidationKeyType().equals(isPassword ? ValidationKeyType.PASSWORD : ValidationKeyType.QR_RESET) &&
+        diffMillis(user.getValidationKeyUpdated()) > TimeUnit.MINUTES.toMillis(5)) {
+      resetToken = user.getValidationKey();
+      validForHour = diffMillis(user.getValidationKeyUpdated());
+    } else {
+      resetToken = securityUtils.generateSecureRandomString();
+      setValidationKey(user, resetToken, isPassword ? ValidationKeyType.PASSWORD : ValidationKeyType.QR_RESET);
+    }
+    
+    sendRecoveryValidationKeyForCloud(user, url, securityUtils.urlEncode(resetToken), isPassword, validForHour);
+  }
+  
+  private void sendRecoveryValidationKeyForCloud(Users user, String url,
+      String resetToken, boolean isPassword, long validFor)
+      throws UserException {
+    String subject = UserAccountsEmailMessages.ACCOUNT_MOBILE_RECOVERY_SUBJECT;
+    String msg = UserAccountsEmailMessages.buildQRRecoveryMessage(url, user.getUsername() + resetToken, validFor);
+    if (isPassword) {
+      subject = UserAccountsEmailMessages.ACCOUNT_PASSWORD_RECOVERY_SUBJECT;
+      msg = UserAccountsEmailMessages.buildPasswordRecoveryMessage(url, user.getUsername() + resetToken, validFor);
+    }
+    cloudClient.notifyToSendEmail(user.getEmail(), subject, msg);
   }
 }

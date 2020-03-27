@@ -152,5 +152,14 @@ public class VariablesService {
     };
     return Response.ok().entity(questions).build();
   }
+  
+  @GET
+  @Path("isCloud")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response isCloud() {
+    RESTApiJsonResponse json = new RESTApiJsonResponse();
+    json.setData(settings.isCloud());
+    return noCacheResponse.getNoCacheResponseBuilder(Response.Status.OK).entity(json).build();
+  }
 
 }

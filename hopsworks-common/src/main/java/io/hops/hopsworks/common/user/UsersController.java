@@ -766,4 +766,9 @@ public class UsersController {
     return new GenericEntity<List<BbcGroup>>(list) {
     };
   }
+  
+  public void sendPasswordRecoveryEmailForCloud(String email, String reqUrl) throws UserException {
+    Users user = userFacade.findByEmail(email);
+    authController.sendNewRecoveryValidationKeyForCloud(user, reqUrl, true);
+  }
 }
