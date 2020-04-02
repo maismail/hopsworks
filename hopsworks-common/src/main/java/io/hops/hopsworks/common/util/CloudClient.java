@@ -61,6 +61,7 @@ public class CloudClient {
     
     HttpPost request = new HttpPost(recoverPasswordUrl);
     request.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+    request.setHeader("x-api-key", settings.getCloudEventsEndPointAPIKey());
     try {
       request.setEntity(new StringEntity(data.toString()));
     } catch (UnsupportedEncodingException ex) {
